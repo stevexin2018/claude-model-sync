@@ -1,0 +1,14 @@
+[Unit]
+Description=Claude Model Sync strict alias proxy
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/claude-model-sync/proxy.env
+ExecStart=/usr/bin/node %h/.local/share/claude-model-sync/proxy/server.mjs
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

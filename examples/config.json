@@ -1,0 +1,11 @@
+{
+  "source": {"type": "inline"},
+  "models": [
+    {"target": "gemini-3.8-flash-high"},
+    {"target": "gpt-5.6-sol"}
+  ],
+  "compatibilityAliases": [
+    {"alias": "claude-haiku-compatible", "target": "gemini-3.8-flash-high", "visible": false}
+  ],
+  "output": {"manifest": "./generated/models.json"}
+}

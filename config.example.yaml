@@ -1,0 +1,17 @@
+source:
+  type: inline
+
+models:
+  - target: example-model-1
+    alias: claude-example-1
+    visible: true
+  - target: example-model-2
+    # Alias is generated deterministically when omitted.
+
+compatibilityAliases:
+  - alias: claude-haiku-compatible
+    target: example-model-2
+    visible: false
+
+output:
+  manifest: ~/.config/claude-model-sync/models.json
