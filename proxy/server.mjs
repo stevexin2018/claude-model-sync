@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 8787);
@@ -12,14 +12,24 @@ const maxBody = Number(process.env.MAX_BODY_BYTES || 2_000_000);
 const timeoutMs = Number(process.env.UPSTREAM_TIMEOUT_MS || 120_000);
 const allowed = new Set(["/v1/messages"]);
 
+let cachedCatalog = null;
+let lastMtime = 0;
+
 function log(event, fields = {}) {
   process.stdout.write(JSON.stringify({ ts: new Date().toISOString(), event, ...fields }) + "\n");
 }
 
 async function catalog() {
   if (!manifestPath) throw new Error("CLAUDE_MODEL_SYNC_MANIFEST is required");
-  const data = JSON.parse(await readFile(manifestPath, "utf8"));
-  return data.models || [];
+  const stats = await stat(manifestPath).catch(() => null);
+  const mtime = stats ? stats.mtimeMs : 0;
+  if (!cachedCatalog || mtime !== lastMtime) {
+    const data = JSON.parse(await readFile(manifestPath, "utf8"));
+    cachedCatalog = data.models || [];
+    lastMtime = mtime;
+    log("catalog_reloaded", { count: cachedCatalog.length, manifestPath });
+  }
+  return cachedCatalog;
 }
 
 function send(res, status, body, origin = "") {

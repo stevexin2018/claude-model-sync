@@ -3,12 +3,12 @@
 ## Verified
 
 - Python CLI, catalog validation, transactions, and rollback on Windows, macOS, and Linux CI.
-- Node.js strict alias proxy core on Linux CI; it uses platform-neutral Node APIs.
-- Windows registry artifact generation is deterministic and performs no import.
+- Node.js strict alias proxy core with zero-downtime mtime hot reloading.
+- Windows registry artifact generation (`adapters/windows-registry.ps1`).
+- Windows Store MSIX container registry piercing via `Invoke-CommandInDesktopPackage` (`-PiercingMSIX`).
 
 ## Experimental
 
-- Windows registry import, Claude application discovery, and restart orchestration: environment-specific and intentionally not automated in v0.1.0.
 - macOS managed configuration/mobileconfig and LaunchAgent integration: documented direction, not implemented.
 - Linux systemd user unit: supplied as a template; paths and environment must be reviewed.
 

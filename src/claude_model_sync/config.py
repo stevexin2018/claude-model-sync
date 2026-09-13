@@ -41,6 +41,8 @@ def desired_models(config_path: Path) -> tuple[list[Model], dict[str, Any]]:
     cfg = load_document(config_path)
     source = cfg.get("source", {"type": "inline"})
     source_type = source.get("type", "inline") if isinstance(source, dict) else "inline"
+    custom_rules = cfg.get("aliasRules", cfg.get("transforms"))
+
     if source_type == "inline":
         source_items = cfg.get("models", [])
     elif source_type == "local":
@@ -54,8 +56,9 @@ def desired_models(config_path: Path) -> tuple[list[Model], dict[str, Any]]:
         source_items = ids
     else:
         raise ConfigError(f"unsupported source type: {source_type}")
-    visible = normalize_models(source_items, visible=True)
-    compatibility = normalize_models(cfg.get("compatibilityAliases", []), visible=False)
+
+    visible = normalize_models(source_items, visible=True, custom_rules=custom_rules)
+    compatibility = normalize_models(cfg.get("compatibilityAliases", []), visible=False, custom_rules=custom_rules)
     output_value = str(cfg.get("output", {}).get("manifest", "~/.config/claude-model-sync/models.json"))
     output = Path(output_value).expanduser()
     if not output.is_absolute():

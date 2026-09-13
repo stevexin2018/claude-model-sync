@@ -22,37 +22,58 @@ class Model:
         return {"alias": self.alias, "target": self.target, "visible": self.visible}
 
 
-def generate_alias(model_id: str) -> str:
-    """Generate a deterministic Claude-compatible alias."""
+def generate_alias(model_id: str, custom_rules: list[dict[str, str]] | None = None) -> str:
+    """Generate a deterministic Claude-compatible alias with multimodal and rule support."""
     value = model_id.strip().lower()
     if not value:
         raise ConfigError("model id cannot be empty")
     if value.startswith("claude-"):
         return value
-    match = re.match(r"gpt-(\d+(?:\.\d+)?)(.*)$", value)
+
+    if custom_rules:
+        for rule in custom_rules:
+            pattern = rule.get("match") or rule.get("pattern")
+            replacement = rule.get("replace") or rule.get("replacement") or rule.get("alias")
+            if pattern and replacement:
+                if re.search(pattern, value):
+                    res = re.sub(pattern, replacement, value)
+                    return res if res.startswith("claude-") else f"claude-{res}"
+
+    if value == "codex-auto-review":
+        return "claude-auto-review"
+
+    match_img = re.match(r"^gpt-image-(\d+(?:\.\d+)?)(.*)$", value)
+    if match_img:
+        version = match_img.group(1).replace(".", "")
+        return f"claude-o-image-{version}{match_img.group(2)}"
+
+    match = re.match(r"^gpt-(\d+(?:\.\d+)?)(.*)$", value)
     if match:
         version = match.group(1).replace(".", "")
         return f"claude-o{version}{match.group(2)}"
-    match = re.match(r"gemini-(\d+(?:\.\d+)?)(.*)$", value)
+
+    match = re.match(r"^gemini-(\d+(?:\.\d+)?)(.*)$", value)
     if match:
         version = match.group(1).replace(".", "")
         return f"claude-g{version}{match.group(2)}"
+
     if value.startswith("gemini-"):
         return "claude-g-" + value.removeprefix("gemini-")
+
     safe = re.sub(r"[^a-z0-9._-]+", "-", value).strip("-")
     return "claude-" + safe
 
 
-def normalize_models(items: Iterable[Any], visible: bool = True) -> list[Model]:
+def normalize_models(items: Iterable[Any], visible: bool = True, custom_rules: list[dict[str, str]] | None = None) -> list[Model]:
     result: list[Model] = []
     for item in items:
         if isinstance(item, str):
-            target, alias, item_visible = item, generate_alias(item), visible
+            target, alias, item_visible = item, generate_alias(item, custom_rules), visible
         elif isinstance(item, dict):
             target = str(item.get("target") or item.get("id") or "").strip()
             if not target:
                 raise ConfigError("each model needs target or id")
-            alias = str(item.get("alias") or generate_alias(target)).strip()
+            alias = str(item.get("alias") or generate_alias(target, custom_rules)).strip()
             item_visible = bool(item.get("visible", visible))
         else:
             raise ConfigError("models must be strings or objects")
